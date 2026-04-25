@@ -1,12 +1,11 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>电力计算工具箱</title>
+    <title>电力计算工具箱 Pro</title>
     <style>
-        :root { --ios-blue: #007AFF; --ios-bg: #F2F2F7; --ios-grey: #8E8E93; --ios-sep: #C6C6C8; }
+        :root { --ios-blue: #007AFF; --ios-bg: #F2F2F7; --ios-grey: #8E8E93; --ios-sep: #C6C6C8; --ios-green: #28a745; --ios-warn: #FF9500; }
         body { font-family: -apple-system, system-ui, sans-serif; background: var(--ios-bg); margin: 0; padding: 10px; -webkit-font-smoothing: antialiased; }
         .container { max-width: 420px; margin: 0 auto; }
         
@@ -20,23 +19,26 @@
         .row:last-child { border-bottom: none; }
         
         .label-text { font-size: 15px; color: #000; white-space: nowrap; flex-shrink: 0; margin-right: 15px; }
-        input, select { flex: 1; border: none; outline: none; font-size: 16px; text-align: right; color: var(--ios-blue); background: transparent; font-weight: 500; }
-        select { text-align-last: right; -webkit-appearance: none; }
+        input, select { flex: 1; border: none; outline: none; font-size: 16px; text-align: right; color: var(--ios-blue); background: transparent; font-weight: 500; -webkit-appearance: none; }
+        select { text-align-last: right; }
 
-        .main-btn { width: 100%; color: #fff; border: none; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 600; margin-top: 5px; }
+        .main-btn { width: 100%; color: #fff; border: none; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 600; margin-top: 5px; cursor: pointer; }
         .btn-ac { background: var(--ios-blue); }
         .btn-dc { background: #5856D6; }
-        .btn-s { background: #10B981; }
+        .btn-s { background: var(--ios-green); }
         button:active { opacity: 0.7; }
 
-        #res { margin-top: 15px; padding: 18px; border-radius: 12px; display: none; background: #fff; border: 0.5px solid #DDD; }
+        /* 结果面板 */
+        #res, #res-v3 { margin-top: 15px; padding: 18px; border-radius: 12px; display: none; background: #fff; border: 0.5px solid #DDD; }
         .pass { border-left: 6px solid #34C759; }
         .fail { border-left: 6px solid #FF3B30; }
         .res-grid { display: flex; justify-content: space-between; gap: 8px; }
         .res-item { flex: 1; text-align: center; }
         .res-val { font-size: 17px; font-weight: 700; color: #000; display: block; }
+        .res-val-v3 { color: var(--ios-green); font-size: 18px; }
         .res-lbl { font-size: 11px; color: var(--ios-grey); display: block; margin-top: 4px; }
         .status-bar { margin-top: 12px; padding-top: 10px; border-top: 0.5px solid #EEE; font-weight: 700; text-align: center; font-size: 13px; }
+        .warning-text { color: var(--ios-warn); font-size: 12px; margin-top: 10px; text-align: center; font-weight: 600; }
         
         .content { display: none; }
         .content.active { display: block; }
@@ -48,15 +50,15 @@
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('ac')">交流压降</button>
         <button class="tab-btn" onclick="switchTab('dc')">直流压降</button>
-        <button class="tab-btn" onclick="switchTab('s')">线缆选型</button>
+        <button class="tab-btn" onclick="switchTab('s')">专业选型 v3.0</button>
     </div>
 
     <div id="ac-panel" class="content active">
         <div class="list-group">
             <div class="row"><span class="label-text">供电系统</span><select id="ac-ph"><option value="1">单相 220V</option><option value="3">三相 380V</option></select></div>
-            <div class="row"><span class="label-text">负载功率 (kW)</span><input type="number" id="ac-p" inputmode="decimal"></div>
+            <div class="row"><span class="label-text">负载功率 (kW)</span><input type="number" id="ac-p" inputmode="decimal" placeholder="0"></div>
             <div class="row"><span class="label-text">功率因数</span><input type="number" id="ac-cos" inputmode="decimal" value="0.9"></div>
-            <div class="row"><span class="label-text">线路长度 (m)</span><input type="number" id="ac-l" inputmode="decimal"></div>
+            <div class="row"><span class="label-text">线路长度 (m)</span><input type="number" id="ac-l" inputmode="decimal" placeholder="0"></div>
             <div class="row"><span class="label-text">导线线径 (mm²)</span><input type="number" id="ac-s" inputmode="decimal" value="4"></div>
         </div>
         <button class="main-btn btn-ac" onclick="calcAC()">计算压降</button>
@@ -65,8 +67,8 @@
     <div id="dc-panel" class="content">
         <div class="list-group">
             <div class="row"><span class="label-text">工作电压 (V)</span><input type="number" id="dc-u" inputmode="decimal" value="24"></div>
-            <div class="row"><span class="label-text">负载功率 (W)</span><input type="number" id="dc-p" inputmode="decimal"></div>
-            <div class="row"><span class="label-text">线路长度 (m)</span><input type="number" id="dc-l" inputmode="decimal"></div>
+            <div class="row"><span class="label-text">负载功率 (W)</span><input type="number" id="dc-p" inputmode="decimal" placeholder="0"></div>
+            <div class="row"><span class="label-text">线路长度 (m)</span><input type="number" id="dc-l" inputmode="decimal" placeholder="0"></div>
             <div class="row"><span class="label-text">导线线径 (mm²)</span><input type="number" id="dc-s" inputmode="decimal" value="4"></div>
         </div>
         <button class="main-btn btn-dc" onclick="calcDC()">计算压降</button>
@@ -74,21 +76,15 @@
 
     <div id="s-panel" class="content">
         <div class="list-group">
-            <div class="row">
-                <span class="label-text">系统类型</span>
-                <select id="s-type" onchange="toggleSUnit()">
-                    <option value="dc">直流系统</option>
-                    <option value="ac1">交流单相</option>
-                    <option value="ac3">交流三相</option>
-                </select>
-            </div>
-            <div class="row"><span class="label-text">工作电压 (V)</span><input type="number" id="s-u" inputmode="decimal" value="24"></div>
-            <div class="row"><span class="label-text" id="s-p-label">负载功率 (W)</span><input type="number" id="s-p" inputmode="decimal"></div>
-            <div class="row" id="s-cos-row" style="display:none;"><span class="label-text">功率因数</span><input type="number" id="s-cos" inputmode="decimal" value="0.9"></div>
-            <div class="row"><span class="label-text">线路长度 (m)</span><input type="number" id="s-l" inputmode="decimal"></div>
-            <div class="row"><span class="label-text">允许压降 (%)</span><input type="number" id="s-limit" inputmode="decimal" value="5"></div>
+            <div class="row"><span class="label-text">系统电压</span><select id="s-phase"><option value="3">三相 380V</option><option value="1">单相 220V</option></select></div>
+            <div class="row"><span class="label-text">负载功率 (kW)</span><input type="number" id="s-p" inputmode="decimal" value="15"></div>
+            <div class="row"><span class="label-text">功率因数</span><input type="number" id="s-cos" inputmode="decimal" value="0.85"></div>
+            <div class="row"><span class="label-text">线路长度 (m)</span><input type="number" id="s-len" inputmode="numeric" value="50"></div>
+            <div class="row"><span class="label-text">导体材质</span><select id="s-mat"><option value="Cu">铜芯 (YJV)</option><option value="Al">铝芯 (YJLV)</option></select></div>
+            <div class="row"><span class="label-text">环境温度 (℃)</span><input type="number" id="s-temp" inputmode="numeric" value="35"></div>
+            <div class="row"><span class="label-text">敷设环境</span><select id="s-env"><option value="0">空气中</option><option value="1">土壤直埋</option></select></div>
         </div>
-        <button class="main-btn btn-s" onclick="calcSize()">自动匹配线径 (80°C)</button>
+        <button class="main-btn btn-s" onclick="runCalcV3()">立即核算规格</button>
     </div>
 
     <div id="res">
@@ -99,12 +95,31 @@
         </div>
         <div id="status" class="status-bar"></div>
     </div>
+
+    <div id="res-v3" class="pass">
+        <div class="res-grid">
+            <div class="res-item" style="flex:1.5"><span class="res-val res-val-v3" id="out-cable">-</span><span class="res-lbl">建议规格</span></div>
+            <div class="res-item"><span class="res-val" id="out-i">0</span><span class="res-lbl">工作电流(A)</span></div>
+            <div class="res-item"><span class="res-val" id="out-drop">0%</span><span class="res-lbl">预计压降</span></div>
+        </div>
+        <div id="warn-box" class="warning-text" style="display:none;">⚠️ 距离较长压降较大，已自动增加截面积</div>
+        <div class="status-bar" style="color:var(--ios-green)">符合 YJV/YJLV 起帆远东标准</div>
+    </div>
 </div>
 
 <script>
     const RHO80 = 0.0212; 
     const X0 = 0.00008;
-    const STD_S = [1, 1.5, 2.5, 4, 6, 10, 16, 25, 35, 50, 70, 95, 120, 150];
+    
+    // V3.0 数据载入
+    const ampData = {
+        1.5: {Cu:[22,30], Al:[17,23]}, 2.5: {Cu:[30,41], Al:[23,32]},
+        4: {Cu:[41,53], Al:[31,41]}, 6: {Cu:[53,67], Al:[40,51]},
+        10: {Cu:[73,90], Al:[56,70]}, 16: {Cu:[98,118], Al:[75,91]},
+        25: {Cu:[128,152], Al:[98,117]}, 35: {Cu:[158,182], Al:[121,140]},
+        50: {Cu:[195,218], Al:[150,168]}, 70: {Cu:[245,268], Al:[188,206]},
+        95: {Cu:[305,330], Al:[234,254]}, 120:{Cu:[355,380], Al:[273,292]}
+    };
 
     function switchTab(type) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -112,51 +127,24 @@
         event.currentTarget.classList.add('active');
         document.getElementById(type + '-panel').classList.add('active');
         document.getElementById('res').style.display = 'none';
+        document.getElementById('res-v3').style.display = 'none';
     }
 
-    function toggleSUnit() {
-        const type = document.getElementById('s-type').value;
-        const pLabel = document.getElementById('s-p-label');
-        const cosRow = document.getElementById('s-cos-row');
-        const uInput = document.getElementById('s-u');
-        
-        if (type === 'dc') {
-            pLabel.innerText = "负载功率 (W)";
-            cosRow.style.display = 'none';
-            if (uInput.value == 220 || uInput.value == 380) uInput.value = 24;
-        } else {
-            pLabel.innerText = "负载功率 (kW)";
-            cosRow.style.display = 'flex';
-            uInput.value = (type === 'ac1') ? 220 : 380;
-        }
-    }
-
-    function showRes(v1, v2, v3, mode = 'drop') {
+    function showRes(v1, v2, v3) {
         const box = document.getElementById('res');
+        document.getElementById('res-v3').style.display = 'none';
         box.style.display = 'block';
         document.getElementById('res-1').innerText = v1;
         document.getElementById('res-2').innerText = v2;
         document.getElementById('res-3').innerText = v3;
+        const p = parseFloat(v3);
+        box.className = p > 5 ? 'fail' : 'pass';
         const st = document.getElementById('status');
-        
-        if (mode === 'size') {
-            document.getElementById('lbl-1').innerText = "最小截面";
-            document.getElementById('lbl-2').innerText = "建议线径";
-            document.getElementById('lbl-3').innerText = "满载电流";
-            st.innerText = "✅ 已根据 5% 压降标准匹配最接近规格";
-            st.style.color = "#10B981";
-            box.className = "pass";
-        } else {
-            document.getElementById('lbl-1').innerText = "电流 (A)";
-            document.getElementById('lbl-2').innerText = "压降 (V)";
-            document.getElementById('lbl-3').innerText = "比例 (%)";
-            const p = parseFloat(v3);
-            box.className = p > 5 ? 'fail' : 'pass';
-            st.innerText = p > 5 ? "⚠️ 压降超标 (建议更换更大线径)" : "✅ 运行参数合格";
-            st.style.color = p > 5 ? "#FF3B30" : "#34C759";
-        }
+        st.innerText = p > 5 ? "⚠️ 压降超标 (建议更换更大线径)" : "✅ 运行参数合格";
+        st.style.color = p > 5 ? "#FF3B30" : "#34C759";
     }
 
+    // 基础交流压降计算
     function calcAC() {
         const ph = parseInt(document.getElementById('ac-ph').value), p = parseFloat(document.getElementById('ac-p').value);
         const cos = parseFloat(document.getElementById('ac-cos').value), l = parseFloat(document.getElementById('ac-l').value), s = parseFloat(document.getElementById('ac-s').value);
@@ -167,6 +155,7 @@
         showRes(i.toFixed(2), du.toFixed(2), (du/u*100).toFixed(2) + "%");
     }
 
+    // 基础直流压降计算
     function calcDC() {
         const u = parseFloat(document.getElementById('dc-u').value), p = parseFloat(document.getElementById('dc-p').value);
         const l = parseFloat(document.getElementById('dc-l').value), s = parseFloat(document.getElementById('dc-s').value);
@@ -175,32 +164,64 @@
         showRes(i.toFixed(2), du.toFixed(2), (du/u*100).toFixed(2) + "%");
     }
 
-    function calcSize() {
-        const type = document.getElementById('s-type').value;
-        const u = parseFloat(document.getElementById('s-u').value);
-        const pVal = parseFloat(document.getElementById('s-p').value);
-        const l = parseFloat(document.getElementById('s-l').value);
-        const cos = parseFloat(document.getElementById('s-cos').value);
-        const limit = parseFloat(document.getElementById('s-limit').value);
-        
-        if (isNaN(pVal) || isNaN(l) || isNaN(u)) return alert("请填写完整参数");
+    // V3.0 核心计算逻辑
+    function runCalcV3() {
+        const phase = parseInt(document.getElementById('s-phase').value);
+        const P = parseFloat(document.getElementById('s-p').value);
+        const cos = parseFloat(document.getElementById('s-cos').value) || 0.85;
+        const L = parseFloat(document.getElementById('s-len').value) || 0;
+        const T = parseFloat(document.getElementById('s-temp').value);
+        const mat = document.getElementById('s-mat').value;
+        const envIdx = parseInt(document.getElementById('s-env').value);
 
-        let i, minS;
-        const targetDU = u * (limit / 100);
+        if (isNaN(P) || isNaN(L)) return alert("请填写功率和长度");
 
-        if (type === 'dc') {
-            i = pVal / u;
-            minS = (2 * i * l * RHO80) / targetDU;
-        } else if (type === 'ac1') {
-            i = (pVal * 1000) / (u * cos);
-            minS = (2 * i * l * RHO80 * cos) / targetDU; 
-        } else {
-            i = (pVal * 1000) / (1.732 * u * cos);
-            minS = (1.732 * i * l * RHO80 * cos) / targetDU;
+        // 1. 电流计算
+        let I = (phase === 3) ? (P / (1.732 * 0.38 * cos)) : (P / (0.22 * cos));
+
+        // 2. 修正电流 (安全系数 1.2 * 温度校正系数)
+        let kTemp = 1 - (T - 40) * 0.008; 
+        let targetI = I * 1.2 / kTemp;
+
+        // 3. 匹配截面积
+        let sizes = Object.keys(ampData).map(Number).sort((a,b)=>a-b);
+        let sFit = sizes[sizes.length-1];
+        for(let s of sizes) {
+            if(ampData[s][mat][envIdx] >= targetI) { sFit = s; break; }
         }
 
-        let rec = STD_S.find(v => v >= minS) || "需定制";
-        showRes(minS.toFixed(2) + "mm²", rec + "mm²", i.toFixed(2) + "A", 'size');
+        // 4. 压降校验 (5% 为限)
+        let rho = (mat === 'Cu') ? 0.0178 : 0.0285;
+        let vDropPercent = 0;
+        let finalS = sFit;
+        let upgraded = false;
+
+        while(true) {
+            let factor = (phase === 3) ? 1.732 : 2;
+            let volt = (phase === 3) ? 380 : 220;
+            vDropPercent = (factor * I * L * (rho / finalS) * cos) / volt * 100;
+            if (vDropPercent <= 5 || finalS >= 120) break;
+            let curIdx = sizes.indexOf(finalS);
+            finalS = sizes[curIdx + 1];
+            upgraded = true;
+        }
+
+        // 5. 结果展示
+        document.getElementById('res').style.display = 'none';
+        document.getElementById('res-v3').style.display = 'block';
+        document.getElementById('out-i').innerText = I.toFixed(1);
+        document.getElementById('out-drop').innerText = vDropPercent.toFixed(2) + "%";
+        document.getElementById('warn-box').style.display = upgraded ? 'block' : 'none';
+        
+        let cableName = (mat === 'Cu') ? "YJV" : "YJLV";
+        let coreStr = "";
+        if(phase === 3) {
+            let peSize = (finalS <= 16) ? finalS : (finalS <= 35 ? 16 : Math.ceil(finalS/2));
+            coreStr = `5×${finalS} 或 (3×${finalS}+2×${peSize})`;
+        } else {
+            coreStr = `3×${finalS}`;
+        }
+        document.getElementById('out-cable').innerText = `${cableName}-${coreStr}`;
     }
 </script>
 </body>
